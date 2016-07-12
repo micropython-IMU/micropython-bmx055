@@ -27,6 +27,7 @@ SOFTWARE.
 
 import machine
 
+# from stackoverflow J.F. Sebastian
 def _twos_comp(val, bits=8):
     """compute the 2's complement of int val with bits"""
     if (val & (1 << (bits - 1))) != 0: # if sign bit is set
