@@ -37,12 +37,15 @@ def _twos_comp(val, bits=8):
 
 class BMX055():
 
-    def __init__(self, i2c=machine.I2C(machine.Pin(5), machine.Pin(4))):
+    def __init__(self, i2c):
 
-        self.i2c = i2c
+        if type (i2c) == machine.I2C:
+            self.i2c = i2c
+        else:
+            raise TypeError('passed argument is not an I2C object')
         self.accel = BMA2X2(self.i2c)
         self.gyro = BMG160(self.i2c)
-        self.mag = BMM050(self.i2c)
+#        self.mag = BMM050(self.i2c)
 
 
 class BMA2X2():
@@ -51,24 +54,43 @@ class BMA2X2():
     def __init__(self, i2c):
 
         self.i2c = i2c
-        self.chip_id = i2c.readfrom_mem(0x18, 0x00, 1)[0]
+        self.acc_addr = 0x18
+        try:
+            self.chip_id = i2c.readfrom_mem(self.acc_addr, 0x00, 1)[0]
+        except OSError:
+            self.acc_addr = 0x19
+            try:
+                self.chip_id = i2c.readfrom_mem(self.acc_addr, 0x00, 1)[0]
+            except OSError:
+                raise OSError('no BMA2X2 connected')
+        print('---', self.get_range())
+        self.set_range(2)      # default range to 16g
 
     def _read_accel(self, addr):
         """return accel data from addr"""
-        LSB, MSB = self.i2c.readfrom_mem(0x18, addr, 2)
+        LSB, MSB = self.i2c.readfrom_mem(self.acc_addr, addr, 2)
         LSB = _twos_comp(LSB)
         MSB = _twos_comp(MSB)
-        return (LSB + (MSB<<4))/(2**10)
+        return (LSB + (MSB<<4))*self._resolution/1000
 
-    def set_range(self, r):
+    def temperature(self):
+        return self.i2c.readfrom_mem(self.acc_addr, 0x08, 1)[0]/2 + 23
+
+    def set_range(self, accel_range):
         """set accel range to 2, 4, 8 or 16g"""
         try:
-            r = {2:3, 4:5, 8:8, 16:12}[r]
+            range_byte = {2:3, 4:5, 8:8, 16:12}[accel_range]
         except KeyError:
-            r = 16
+            range_byte = 16
             print('invalid range, using 16g instead')
-        self.i2c.writeto_mem(0x18, 0x0F, hex(r))
-        return r
+        print('...', hex(range_byte))
+        self.i2c.writeto_mem(self.acc_addr, 0x0F, hex(range_byte))
+        self._resolution = {2:0.98, 4:1.95, 8:3.91, 16:7.81}[accel_range]
+        return self.get_range()
+
+    def get_range(self):
+        #return #{2:3, 4:5, 8:8, 16:12}[self.i2c.readfrom_mem(self.acc_addr, 0x0F, 1)[0]]
+        return self.i2c.readfrom_mem(self.acc_addr, 0x0F, 1)
 
     def x(self):
         return self._read_accel(0x02)
@@ -79,17 +101,28 @@ class BMA2X2():
     def z(self):
         return self._read_accel(0x06)
 
+    def xyz(self):
+        return (self.x(), self.y(), self.z())
+
 class BMG160():
     '''gyroscope'''
 
     def __init__(self, i2c):
 
         self.i2c = i2c
-        self.chip_id = i2c.readfrom_mem(0x68, 0x00, 1)[0]
+        self.gyro_addr = 0x68
+        try:
+            self.chip_id = i2c.readfrom_mem(self.gyro_addr, 0x00, 1)[0]
+        except OSError:
+            self.acc_addr = 0x69
+            try:
+                self.chip_id = i2c.readfrom_mem(self.gyro_addr, 0x00, 1)[0]
+            except OSError:
+                raise OSError('no BMG160 connected')
 
     def _read_gyro(self, addr):
         """return accel data from addr"""
-        LSB, MSB = self.i2c.readfrom_mem(0x68, addr, 2)
+        LSB, MSB = self.i2c.readfrom_mem(self.gyro_addr, addr, 2)
         LSB = _twos_comp(LSB)
         MSB = _twos_comp(MSB)
         return 2000*(LSB + (MSB<<8))/(2**15)
@@ -103,30 +136,33 @@ class BMG160():
     def z(self):
         return self._read_gyro(0x06)
 
-class BMM050():
-    '''magnetometer'''
+    def xyz(self):
+        return (self.x(), self.y(), self.z())
 
-    def __init__(self, i2c):
+#class BMM050():
+#    '''magnetometer'''
 
-        self.i2c = i2c
-        self.chip_id = i2c.readfrom_mem(0x10, 0x40, 1)[0]
+#    def __init__(self, i2c):
 
-    def _read_mag(self, addr):
-        """return accel data from addr"""
-        LSB, MSB = self.i2c.readfrom_mem(0x68, addr, 2)
-        LSB = _twos_comp(LSB)
-        MSB = _twos_comp(MSB)
-        return (LSB + (MSB<<5))/(2**15)
+#        self.i2c = i2c
+#        self.chip_id = i2c.readfrom_mem(0x10, 0x40, 1)[0]
 
-    def x(self):
-        return self._read_mag(0x42)
+#    def _read_mag(self, addr):
+#        """return accel data from addr"""
+#        LSB, MSB = self.i2c.readfrom_mem(0x68, addr, 2)
+#        LSB = _twos_comp(LSB)
+#        MSB = _twos_comp(MSB)
+#        return (LSB + (MSB<<5))/(2**15)
 
-    def y(self):
-        return self._read_mag(0x44)
+#    def x(self):
+#        return self._read_mag(0x42)
 
-    def z(self):
-        return self._read_mag(0x46)
+#    def y(self):
+#        return self._read_mag(0x44)
 
-if __name__ == "__main__":
+#    def z(self):
+#        return self._read_mag(0x46)
+
+#if __name__ == "__main__":
     #from bmx055 import BMX055
-    imu = BMX055()
+    #imu = BMX055()
