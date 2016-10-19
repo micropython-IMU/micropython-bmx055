@@ -1,6 +1,6 @@
 '''
-bmx055 is a micropython module for the Bosch BMX055 sensor.
-It measures acceleration, turn rate and the magnetic field in three axis.
+bmm050 is a micropython module for the Bosch BMM050 sensor.
+It measures the magnetic field in three axis.
 
 The MIT License (MIT)
 
@@ -26,15 +26,35 @@ SOFTWARE.
 '''
 
 import machine
-from bma2x2 import BMA2X2
-from bmg160 import BMG160
-from bmm050 import BMM050
+
+# from stackoverflow J.F. Sebastian
+def _twos_comp(val, bits=8):
+    """compute the 2's complement of int val with bits"""
+    if (val & (1 << (bits - 1))) != 0: # if sign bit is set
+        val = val - (1 << bits)        # compute negative value
+    return val                         # return positive value as is
 
 
-class BMX055():
+class BMM050():
+    '''magnetometer'''
 
     def __init__(self, i2c):
 
-        self.accel = BMA2X2(i2c)
-        self.gyro = BMG160(i2c)
-#        self.mag = BMM050(self.i2c)
+        self.i2c = i2c
+        self.chip_id = i2c.readfrom_mem(0x10, 0x40, 1)[0]
+
+    def _read_mag(self, addr):
+        """return accel data from addr"""
+        LSB, MSB = self.i2c.readfrom_mem(0x68, addr, 2)
+        LSB = _twos_comp(LSB)
+        MSB = _twos_comp(MSB)
+        return (LSB + (MSB<<5))/(2**15)
+
+    def x(self):
+        return self._read_mag(0x42)
+
+    def y(self):
+        return self._read_mag(0x44)
+
+    def z(self):
+        return self._read_mag(0x46)
