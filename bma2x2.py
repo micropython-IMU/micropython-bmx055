@@ -78,7 +78,6 @@ class BMA2X2():
         return self.get_range()
 
     def get_range(self):
-        #return #{2:3, 4:5, 8:8, 16:12}[self.i2c.readfrom_mem(self.acc_addr, 0x0F, 1)[0]]
         return self.i2c.readfrom_mem(self.acc_addr, 0x0F, 1)
 
     def set_filter_bw(self, freq):

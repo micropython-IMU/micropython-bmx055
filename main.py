@@ -5,11 +5,16 @@ from bmx055 import BMX055
 import time
 
 # for atsamd21
-i2c_bus = I2C(scl=Pin.board.SCL, sda=Pin.board.SDA, freq=400000)
-i2c_bus.init()
+#i2c_bus = I2C(scl=Pin.board.SCL, sda=Pin.board.SDA, freq=400000)
+#i2c_bus.init()
 
 # for esp8266 (if this doesn't work switch 4 and 5)
-# i2c_bus = I2c(scl=Pin(4), sda=Pin(5))
+i2c_bus = I2C(scl=Pin(5), sda=Pin(4))
+print(i2c_bus.scan())
+try:
+    print('1:', i2c_bus.readfrom_mem(0x18, 0x00, 1))
+except:
+    print('2:', i2c_bus.readfrom_mem(0x18, 0x00, 1))
 
 imu = BMX055(i2c_bus)
 
@@ -18,7 +23,7 @@ print(imu.accel.i2c.readfrom_mem(imu.accel.acc_addr, 0, 63))
 print('temperature:', imu.accel.temperature())
 print('resolution:', imu.accel._resolution)
 print('accel:', imu.accel.xyz())
-print('gyro:', imu.gyro.xyz())
+#print('gyro:', imu.gyro.xyz())
 print('set range 4:', imu.accel.set_range(4))
 print('get range:', imu.accel.get_range())
 print('set range 8:', imu.accel.set_range(8))
