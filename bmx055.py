@@ -25,6 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 
+import machine
 from bma2x2 import BMA2X2
 from bmg160 import BMG160
 from bmm050 import BMM050
@@ -35,5 +36,5 @@ class BMX055():
     def __init__(self, i2c):
 
         self.accel = BMA2X2(i2c)
-#        self.gyro = BMG160(i2c)
+        self.gyro = BMG160(i2c)
 #        self.mag = BMM050(self.i2c)

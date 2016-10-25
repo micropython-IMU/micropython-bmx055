@@ -1,40 +1,15 @@
-# main.py -- put your code here!
-
-from machine import I2C, Pin
 from bmx055 import BMX055
-import time
+from servo import Servo
+from machine import Pin, I2C
 
-# for atsamd21
-#i2c_bus = I2C(scl=Pin.board.SCL, sda=Pin.board.SDA, freq=400000)
-#i2c_bus.init()
+#imu = BMX055(I2C(sda=Pin(4), scl=Pin(5)))
 
-# for esp8266 (if this doesn't work switch 4 and 5)
-i2c_bus = I2C(scl=Pin(5), sda=Pin(4))
-print(i2c_bus.scan())
-try:
-    print('1:', i2c_bus.readfrom_mem(0x18, 0x00, 1))
-except:
-    print('2:', i2c_bus.readfrom_mem(0x18, 0x00, 1))
+#right = Servo(Pin(2))
+#left = Servo(Pin(15))
 
-imu = BMX055(i2c_bus)
-
-print(imu.accel.i2c.readfrom_mem(imu.accel.acc_addr, 0, 63))
-
-print('temperature:', imu.accel.temperature())
-print('resolution:', imu.accel._resolution)
-print('accel:', imu.accel.xyz())
-#print('gyro:', imu.gyro.xyz())
-print('set range 4:', imu.accel.set_range(4))
-print('get range:', imu.accel.get_range())
-print('set range 8:', imu.accel.set_range(8))
-print('set filter 8:', imu.accel.set_filter_bw(8))
-print('get filter:', imu.accel.get_filter_bw())
-print('set filter 250:', imu.accel.set_filter_bw(250))
-print('accel:', imu.accel.xyz())
-
-t_end = time.ticks_ms() + 10*1000
-while time.ticks_ms() < t_end:
-    print(imu.accel.xyz())
-    time.sleep_ms(100)
-
-i2c_bus.deinit()
+for i in range(17):
+    try:
+        Servo(Pin(i)).write_angle(180)
+    except:
+        print(i)
+#sgeht

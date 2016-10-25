@@ -26,6 +26,7 @@ SOFTWARE.
 '''
 
 import machine
+from time import sleep_ms as sleep
 
 # from stackoverflow J.F. Sebastian
 def _twos_comp(val, bits=8):
@@ -54,7 +55,7 @@ class BMA2X2():
             except OSError:
                 raise OSError('no BMA2X2 connected')
         self.set_range(16)      # default range 16g
-        self.set_filter_bw(125)    # default filter bandwith 125Hz
+        self.set_filter_bw(128)    # default filter bandwith 125Hz
 
     def _read_accel(self, addr):
         """return accel data from addr"""
@@ -78,19 +79,45 @@ class BMA2X2():
         return self.get_range()
 
     def get_range(self):
-        return self.i2c.readfrom_mem(self.acc_addr, 0x0F, 1)
+        return {3:2,5:4,8:8,12:16}[self.i2c.readfrom_mem(self.acc_addr, 0x0F, 1)[0]]
 
     def set_filter_bw(self, freq):
-        freqs = {8:b'\x08', 16:b'\x09', 32:b'\x0A', 63:b'\x0B', 125:b'\x0C', 250:b'\x0D', 500:b'\x0E', 1000:b'\x0F'}
+        freqs = {8:b'\x08', 16:b'\x09', 32:b'\x0A', 64:b'\x0B', 128:b'\x0C', 256:b'\x0D', 512:b'\x0E', 1024:b'\x0F'}
         try:
             freq_byte = freqs[freq]
         except:
-            raise ValueError('invalid filter bandwith, use 8, 16, 32, 63, 125, 250, 500 or 1000')
+            raise ValueError('invalid filter bandwith, use 8, 16, 32, 64, 128, 256, 512 or 1024')
         self.i2c.writeto_mem(self.acc_addr, 0x10, freq_byte)
         return self.get_filter_bw()
 
     def get_filter_bw(self):
-        return self.i2c.readfrom_mem(self.acc_addr, 0x10, 1)
+        return 2**(self.i2c.readfrom_mem(self.acc_addr, 0x10, 1)[0]-5)
+
+    def compensation(self, active=None):
+        accel_range = self.get_range()
+        self.set_range(2)
+        self.i2c.writeto_mem(self.acc_addr, 0x37, b'\x21') # settings x0y0z1 10Hz
+        self.i2c.writeto_mem(self.acc_addr, 0x36, b'\x80') # reset
+        if active is None:  # trigger fast comp
+            active = 'compensated'
+            print(self.i2c.readfrom_mem(self.acc_addr, 0x36, 1))
+            self.i2c.writeto_mem(self.acc_addr, 0x36, b'\x20') # x
+            sleep(100)
+            print(self.i2c.readfrom_mem(self.acc_addr, 0x36, 1))
+            self.i2c.writeto_mem(self.acc_addr, 0x36, b'\x40') # y
+            sleep(100)
+            print(self.i2c.readfrom_mem(self.acc_addr, 0x36, 1))
+            self.i2c.writeto_mem(self.acc_addr, 0x36, b'\x60') # z
+            sleep(100)
+            print(self.i2c.readfrom_mem(self.acc_addr, 0x36, 1))
+        elif active:        # activate slow comp
+            self.i2c.writeto_mem(self.acc_addr, 0x36, b'\x07')
+        elif not active:    # deactivate slow comp
+            self.i2c.writeto_mem(self.acc_addr, 0x36, b'\x00')
+        else:
+            raise TypeError('pass a boolean or no argument')
+        self.set_range(accel_range)
+        return active
 
     def x(self):
         return self._read_accel(0x02)
