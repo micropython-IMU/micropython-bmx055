@@ -1,15 +1,28 @@
+# main.py -- put your code here!
+
+from machine import I2C, Pin
 from bmx055 import BMX055
-from servo import Servo
-from machine import Pin, I2C
+from attitude import angles
+import time
 
-#imu = BMX055(I2C(sda=Pin(4), scl=Pin(5)))
+# for atsamd21
+i2c_bus = I2C(scl=Pin.board.SCL, sda=Pin.board.SDA, freq=400000)
+i2c_bus.init()
 
-#right = Servo(Pin(2))
-#left = Servo(Pin(15))
+imu = BMX055(i2c_bus)
 
-for i in range(17):
-    try:
-        Servo(Pin(i)).write_angle(180)
-    except:
-        print(i)
-#sgeht
+print(imu.accel.i2c.readfrom_mem(imu.accel.acc_addr, 0, 63))
+
+print('temperature:', imu.accel.temperature())
+print('resolution:', imu.accel._resolution)
+print('accel:', imu.accel.xyz())
+print('set range 2:', imu.accel.set_range(2))
+print('set filter 128:', imu.accel.set_filter_bw(128))
+
+t_end = time.ticks_ms() + 100*1000
+while time.ticks_ms() < t_end:
+    imu_data = imu.accel.xyz()
+    print(imu_data, angles(imu_data))
+    time.sleep_ms(1000)
+
+i2c_bus.deinit()
