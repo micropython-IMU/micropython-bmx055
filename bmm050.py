@@ -25,38 +25,54 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 
-import machine
+from time import sleep
 
 # from stackoverflow J.F. Sebastian
 def _twos_comp(val, bits=8):
-    """compute the 2's complement of int val with bits"""
+    '''
+    compute the 2's complement of int val with bits
+    '''
     if (val & (1 << (bits - 1))) != 0: # if sign bit is set
         val = val - (1 << bits)        # compute negative value
     return val                         # return positive value as is
 
 
 class BMM050():
-    '''magnetometer'''
+    '''
+    Class for BMM050 magnetometer
+    '''
 
     def __init__(self, i2c, addr):
+        '''
+        Initializes with an I2C object and address as arguments.
+        '''
 
-        self.buf = bytearray(114)
         self.i2c = i2c
         self.mag_addr = addr
         self.chip_id = i2c.readfrom_mem(self.mag_addr, 0x40, 1)[0]
+        self.i2c.writeto_mem(self.mag_addr, 0x4B, b'\x01')
+        self.i2c.writeto_mem(self.mag_addr, 0x4C, b'\x00')
 
-    def _read_mag(self, addr):
-        """return accel data from addr"""
+    def _read_mag(self, addr, shift):
+        '''
+        return mag data from addr
+        '''
         LSB, MSB = self.i2c.readfrom_mem(self.mag_addr, addr, 2)
-        LSB = _twos_comp(LSB)
+        LSB = _twos_comp(LSB & 0b11111110)
         MSB = _twos_comp(MSB)
-        return (LSB + (MSB<<5))/(2**15)
+        return (LSB + (MSB<<shift)) / 16
+
+    def _res(self):
+        return self._read_mag(0x48, 6)
 
     def x(self):
-        return self._read_mag(0x42)
+        return self._read_mag(0x42, 5)
 
     def y(self):
-        return self._read_mag(0x44)
+        return self._read_mag(0x44, 5)
 
     def z(self):
-        return self._read_mag(0x46)
+        return self._read_mag(0x46, 7)
+
+    def xyz(self) -> tuple:
+        return (self.x(), self.y(), self.z())

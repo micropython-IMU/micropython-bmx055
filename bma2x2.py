@@ -44,12 +44,9 @@ class BMA2X2():
 
     def __init__(self, i2c, addr):
         '''
-        Initializes with an i2c object as argument.
-        Checks if device is connected.
-        Sets range to 16g and filter bandwith to 128Hz.
+        Initializes with an I2C object and address as arguments.
         '''
 
-        self.buf = bytearray(64)
         self.i2c = i2c
         self.acc_addr = addr
         self.chip_id = self.i2c.readfrom_mem(self.acc_addr, 0x00, 1)[0]
