@@ -38,14 +38,16 @@ def _twos_comp(val, bits=8):
 class BMM050():
     '''magnetometer'''
 
-    def __init__(self, i2c):
+    def __init__(self, i2c, addr):
 
+        self.buf = bytearray(114)
         self.i2c = i2c
-        self.chip_id = i2c.readfrom_mem(0x10, 0x40, 1)[0]
+        self.mag_addr = addr
+        self.chip_id = i2c.readfrom_mem(self.mag_addr, 0x40, 1)[0]
 
     def _read_mag(self, addr):
         """return accel data from addr"""
-        LSB, MSB = self.i2c.readfrom_mem(0x68, addr, 2)
+        LSB, MSB = self.i2c.readfrom_mem(self.mag_addr, addr, 2)
         LSB = _twos_comp(LSB)
         MSB = _twos_comp(MSB)
         return (LSB + (MSB<<5))/(2**15)

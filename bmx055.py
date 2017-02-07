@@ -34,6 +34,6 @@ class BMX055():
 
     def __init__(self, i2c):
 
-        self.accel = BMA2X2(i2c, 25)
-        self.gyro = BMG160(i2c, 17)
-        #self.mag = BMM050(i2c)
+        self.accel = BMA2X2(i2c, 24)
+        self.gyro = BMG160(i2c, 16)
+        self.mag = BMM050(i2c, 104)
