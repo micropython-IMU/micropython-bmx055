@@ -1,4 +1,4 @@
-'''
+"""
 bmm050 is a micropython module for the Bosch BMM050 sensor.
 It measures the magnetic field in three axis.
 
@@ -23,29 +23,29 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-'''
+"""
 
 from time import sleep
 
 # from stackoverflow J.F. Sebastian
 def _twos_comp(val, bits=8):
-    '''
+    """
     compute the 2's complement of int val with bits
-    '''
+    """
     if (val & (1 << (bits - 1))) != 0: # if sign bit is set
         val = val - (1 << bits)        # compute negative value
     return val                         # return positive value as is
 
 
 class BMM050():
-    '''
+    """
     Class for BMM050 magnetometer
-    '''
+    """
 
     def __init__(self, i2c, addr):
-        '''
+        """
         Initializes with an I2C object and address as arguments.
-        '''
+        """
 
         self.i2c = i2c
         self.mag_addr = addr
@@ -54,9 +54,9 @@ class BMM050():
         self.i2c.writeto_mem(self.mag_addr, 0x4C, b'\x00')
 
     def _read_mag(self, addr, shift):
-        '''
+        """
         return mag data from addr
-        '''
+        """
         LSB, MSB = self.i2c.readfrom_mem(self.mag_addr, addr, 2)
         LSB = _twos_comp(LSB & 0b11111110)
         MSB = _twos_comp(MSB)

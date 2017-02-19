@@ -1,4 +1,4 @@
-'''
+"""
 bmx055 is a micropython module for the Bosch BMX055 sensor.
 It measures acceleration, turn rate and the magnetic field in three axis.
 
@@ -23,7 +23,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-'''
+"""
 
 from bma2x2 import BMA2X2
 from bmg160 import BMG160
